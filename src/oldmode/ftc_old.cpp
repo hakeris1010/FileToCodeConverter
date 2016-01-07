@@ -1,16 +1,15 @@
-/*File To Code [Procedural] Converter (Der Alte) v0.5.1, by H3nt4iBoY (2015)
-- Worx0rin' g00d!
-- 2 Procedures, hybrid (legacy) and fully C++ (new, 0.5);
-- Supports 3 convert file modes (OLDMODE's) - Picture, Binary, and Text (can be set to Auto)
-- Fully supports number write mode (legacy), new char write mode is partly supported (only on TEXT filemode)
+/*File To Code [Procedural] Converter (Der Alte) v0.5.x, by H3nt4iBoY (2015)
+* main implementation CPP file
 */
 
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
-#include "toolz.h"
+#include "tools/toolz.h"
 #include "structures.h"
 #include "ftc_old.h"
+#include "tools/debug.h"
+#include "debdefines.h"
 
 
 std::string FileToCodeProcedural::headerTitle(std::string zam2)
@@ -32,7 +31,7 @@ std::string FileToCodeProcedural::getArrayName(std::string fname, int mode)
 
     for(int i=0; i<fname.size(); i++)
     {
-        if((fname[i]<'a' || fname[i]>'z') && (fname[i]<'A' || fname[i]>'Z')) fname[i]='_';
+        if((fname[i]<'a' || fname[i]>'z') && (fname[i]<'A' || fname[i]>'Z') && ((fname[i]<'0' || fname[i]>'9') || (fname[i]>='0' && fname[i]<='9' && i==0))) fname[i]='_';
     }
     if(mode==2) return fname+"_data";
     else if(mode==3) return fname+"_size";
@@ -40,14 +39,16 @@ std::string FileToCodeProcedural::getArrayName(std::string fname, int mode)
     return fname;
 }
 
-std::string FileToCodeProcedural::charToWritable(char ch, int mode)
+std::string FileToCodeProcedural::charToWritable(char ch, int mode, bool onBreak)
 {
     std::string rv;
     rv.push_back(ch);
 
     switch(ch)
     {
-        case 0:  return "\\0";
+        case 0:
+            if(onBreak) return "\\0";
+            else return "\\0\"\"";
         case 10: return "\\n";
         case 9:  return "\\t";
         case 11: return "\\v";
@@ -69,24 +70,43 @@ std::string FileToCodeProcedural::charToWritable(char ch, int mode)
 //New Ones
 int FileToCodeProcedural::CPP_convert(std::string inname, std::string outname, int fileMode, int readMode, int writeMode, int arrayNameMode, std::string customArrayName)
 {
+    bool dbg = DEBUG_FTCPROCEDURAL_CPP_CONVERT;
+
+    if(dbg) deb<<"\n--------\nFTCProc::CPP_convert():\n\nSetting inp outp...\n";
+
     std::ifstream input(inname.c_str(), std::fstream::binary);
     std::ofstream outp(outname.c_str());
 
     if(!input.is_open()) return 1;
     if(!outp.is_open()) return 2;
 
+    if(dbg) deb<<"input - getting file size:\nseekg(end)\n";
     input.seekg(0, input.end);
+
+    if(dbg) deb<<"tellg()\n";
     long fileSize = input.tellg();
+
+    if(dbg) deb<<"seekg(beg)\n";
     input.seekg(0, input.beg);
+
+    if(dbg) deb<<"FileSize="<<fileSize<<"\n";
+
+    if(dbg) deb<<"setting file extensions\n";
 
     std::string ext1 = Fun::getFileExtension(inname);
     std::string ext2 = Fun::getFileExtension(outname);
 
-    char data[ fileSize ]; //mode==WHOLE_FILE
+    if(dbg) deb<<"setting data buffer [fileSize]\n";
+    char *data = new char[ fileSize ]; //mode==WHOLE_FILE
+
+    if(dbg) deb<<"inp: read buffer!\n";
     input.read(data, fileSize);
+    if(dbg) deb<<"inp: close()\n";
     input.close();
 
     bool isHeader=false;
+
+    if(dbg) deb<<"outp: writing header stuff\n";
 
     if( ext2=="h" || ext2=="hpp" || ext2=="hxx" )
     {
@@ -99,16 +119,21 @@ int FileToCodeProcedural::CPP_convert(std::string inname, std::string outname, i
     outp<<"File: "<<inname<<" */\n\n";
 
     std::cout<<"\nFile size: "<< fileSize <<" bytes.\n";
-    outp<<"long filesize = "<< fileSize <<"; //size in bytes \n";
+
+    if(dbg) deb<<"Start checking for modes, setting start props\n";
 
     int startPos=0;
     int arrLen=0;
     std::string arrName;
     int identifiedFormat=0;
 
+    if(dbg) deb<<"getting arrName\n";
+
     if(arrayNameMode==OLDMODE_ARRAY_NAME_OUTPUT_FILENAME) arrName=getArrayName(outname);
     else if(arrayNameMode==OLDMODE_ARRAY_NAME_INPUT_FILENAME) arrName=getArrayName(inname);
     else if(arrayNameMode==OLDMODE_ARRAY_NAME_CUSTOM) arrName=getArrayName(customArrayName);
+
+    outp<<"long "<<arrName<<"_filesize = "<< fileSize <<"; //size in bytes \n";
 
     if(ext1=="bmp" && (fileMode==OLDMODE_PICTURE || fileMode==OLDMODE_AUTO) ) //PICTURE
     {
@@ -161,40 +186,58 @@ int FileToCodeProcedural::CPP_convert(std::string inname, std::string outname, i
         else arrLen = fileSize;*/
 
         arrLen = fileSize;
+
+        if(dbg) deb<<"Binary identified\n";
     }
 
     if(arrLen > fileSize) arrLen=fileSize;
+
+    if(dbg) deb<<"arrLen="<<arrLen<<"\noutping array declaration\n";
 
     outp<<"long "<< arrName <<"_lenght = "<< arrLen <<";\n\n";
 
     if(writeMode==OLDMODE_WRITE_NUMBERS) outp<<"unsigned char "<< arrName <<"_data[ "<< arrLen <<" ] = {\n";
     else outp<<"const char "<< arrName <<"_data[] = \n\""; //not fully workz0rin'
 
+    if(dbg) deb<<"Loop start!\n\n";
+
+    const int charBreak=60, numBreak=20;
+    int breakPos;
+    bool onBreak;
+    (writeMode==OLDMODE_WRITE_NUMBERS) ? breakPos=numBreak : breakPos=charBreak;
+
     //write data
     for(int i=startPos; i<fileSize; i++)
     {
         if(i-startPos >= arrLen) break;
 
-        if( i!=startPos && (i-startPos)<arrLen-1 )
-        {
-            if(writeMode==OLDMODE_WRITE_NUMBERS && Fun::isDivided(i-startPos, 20) ) outp<<"\n";
-            else if(writeMode==OLDMODE_WRITE_CHARS && Fun::isDivided(i-startPos, 60) ) outp<<"\"\n\"";
-        }
+        onBreak=false;
+        if( i!=startPos && (i-startPos)<arrLen-1 && Fun::isDivided(i-startPos, breakPos)) onBreak=true;
 
         if(writeMode==OLDMODE_WRITE_NUMBERS)
         {
             if(i!=startPos) outp<<","<< (int)( (uint8_t)data[i] );
             else outp<< (int)( (uint8_t)data[i] );
         }
-        else outp<< charToWritable( data[i], identifiedFormat );
+        else outp<< charToWritable( data[i], identifiedFormat, onBreak );
+
+        if(writeMode==OLDMODE_WRITE_NUMBERS && onBreak) outp<<"\n";
+        else if(writeMode==OLDMODE_WRITE_CHARS && onBreak) outp<<"\"\n\"";
     }
+
+    if(dbg) deb<<"Loop ended. Outp ending stuff.\n";
 
     if(writeMode==OLDMODE_WRITE_NUMBERS) outp<<" };\n";
     else outp<<"\";";
 
     if(isHeader) outp<<"\n\n#endif //"<<headerTitle(outname)<<"\n";
 
+    if(dbg) deb<<"Clearing garbage...\n";
+
     outp.close();
+    delete [] data;
+
+    if(dbg) deb<<"Mission complete! Return!\n\n------------\n";
 
     return 0;
 }

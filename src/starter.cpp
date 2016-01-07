@@ -1,12 +1,12 @@
 #include <iostream>
 #include <string>
-#include "toolz.h"
-#include "ftc_old.h"
+#include "tools/toolz.h"
+#include "oldmode/ftc_old.h"
 #include "starter.h"
 
 using namespace std;
 
-int StartTheShit(int mode)
+int StartTheConverter(int mode)
 {
     bool q=true;
 
@@ -33,7 +33,7 @@ int StartTheShit(int mode)
         /*if(C_convert(fl,fl2)!=0) cout<<"Oops! Something went wrong!"<<endl;
         else cout<<endl<<"Operation Successful!"<<endl;*/
 
-        if(FileToCodeProcedural::CPP_convert(fl, fl2, OLDMODE_AUTO, OLDMODE_READ_WHOLE_FILE, OLDMODE_WRITE_NUMBERS, OLDMODE_ARRAY_NAME_OUTPUT_FILENAME) !=0) cout<<"Oops! Something went wrong!"<<endl;
+        if(FileToCodeProcedural::CPP_convert(fl, fl2, OLDMODE_AUTO, OLDMODE_READ_WHOLE_FILE, OLDMODE_WRITE_CHARS, OLDMODE_ARRAY_NAME_OUTPUT_FILENAME) !=0) cout<<"Oops! Something went wrong!"<<endl;
         else cout<<endl<<"Operation Successful!"<<endl;
 
         char c;
