@@ -13,12 +13,12 @@ The FileToCodeConverter is a Program which converts any file to a C/C++ code (he
   <li>Procedural converter (Der Alte)(oldmode) - Fully developed 'n' working!</li>
   <li>Object-Oriented converter (newmode) - Still InDev.</li>
   </ul>
-<li><br><b>2 modes of putting file data into an array:</b></li>
+<li><b>2 modes of putting file data into an array:</b></li>
   <ul>
   <li>Unsigned char array with bytes represented as Numbers (inefficient, takes much space)</li>
   <li>Char array with bytes represented as ASCII Characters (very efficient, takes only little bit more space than the original) - Even special characters are interpreted correctly (using escape sequences)</li>
   </ul>
-<li><br><b>Several ConvertModes (different file interpretation and different metadata)</b></li>
+<li><b>Several ConvertModes (different file interpretation and different metadata)</b></li>
   <ul>
   <li>Binary Mode (default) - only file data in a buffer. Metadata - file size.</li>
   <li>Text Mode - content written as a C-String of chars.</li>
@@ -26,7 +26,7 @@ The FileToCodeConverter is a Program which converts any file to a C/C++ code (he
   <li>Auto mode - chooses mode automatically based on file extension.</li>
   <li>More to come!</li>
   </ul>
-<li><br><b>UI features - on Windows, you select input and output files in an Explorer window, on other OS's - on a CMD interface.</b></li>
+<li><b>UI features - on Windows, you select input and output files in an Explorer window, on other OS's - on a CMD interface.</b></li>
 </ul>
 
 <h2>TODOS</h2>
